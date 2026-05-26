@@ -53,12 +53,12 @@
   .pipeline { }
   .pipeline-inner { display: flex; flex-direction: column; gap: 6px; }
   .stage-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
-  .stage-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; min-height: 44px; align-items: flex-start; }
+  .stage-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px 12px; min-height: 44px; }
 
   .stage-header { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
-  .stage-count { background: var(--surface2); border-radius: 10px; padding: 1px 7px; font-size: 11px; }
+  .stage-count { background: var(--surface); border-radius: 10px; padding: 1px 7px; font-size: 11px; }
 
-  .client-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .client-card { background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 10px; cursor: pointer; transition: border-color 0.15s; }
   .client-card:hover { border-color: var(--border-mid); }
   .client-card.selected { border: 1.5px solid var(--blue-text); }
   .client-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
@@ -166,7 +166,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl0gDQ0TkyRJiT2i2njRp7B9zkkKRpuoqpvUInjRwPrnoQAQ3WI8QrXPva497Imm32/exec";
+const SCRIPT_URL = "Yhttps://script.google.com/macros/s/AKfycbxl0gDQ0TkyRJiT2i2njRp7B9zkkKRpuoqpvUInjRwPrnoQAQ3WI8QrXPva497Imm32/exec";
 const STAGES = ["Searching","LOI","Due Diligence","Financing","Closing","Closed"];
 
 let clients = [];
@@ -225,7 +225,7 @@ function renderPipeline() {
       else if (over > 0) badge = `<span class="badge badge-red">${over} overdue</span>`;
       else if (parseInt(c.daysInStage) > 14) badge = `<span class="badge badge-amber">${c.daysInStage}d in stage</span>`;
       else badge = `<span class="badge badge-green">${c.daysInStage || 0}d in stage</span>`;
-      return `<div class="client-card${selectedId == c.id ? " selected" : ""}" onclick="selectClient('${c.id}')" style="width:200px; margin-bottom:0;">
+      return `<div class="client-card${selectedId == c.id ? " selected" : ""}" onclick="selectClient('${c.id}')" >
         <div class="client-name">${c.name}</div>
         <div class="client-biz">${c.businessTarget || ""}</div>
         ${tasks.map(t => `<div class="task-row">
@@ -305,7 +305,7 @@ async function draftMessage(targetIdx) {
     const url = SCRIPT_URL + "?action=draft&prompt=" + encodeURIComponent(prompt);
     const res = await fetch(url);
     const data = await res.json();
-    out.textContent = data.draft || JSON.stringify(data);
+    out.textContent = data.draft || "Could not generate draft.";
   } catch(e) {
     out.textContent = "Error generating draft.";
   }
