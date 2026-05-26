@@ -50,10 +50,12 @@
 
   .main { display: grid; grid-template-columns: 1fr 340px; gap: 1rem; }
 
-  .pipeline { overflow-x: auto; }
-  .pipeline-inner { display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); gap: 8px; min-width: 900px; }
+  .pipeline { }
+  .pipeline-inner { display: flex; flex-direction: column; gap: 6px; }
+  .stage-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .stage-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; min-height: 44px; align-items: flex-start; }
 
-  .stage-header { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 4px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .stage-header { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
   .stage-count { background: var(--surface2); border-radius: 10px; padding: 1px 7px; font-size: 11px; }
 
   .client-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
@@ -164,8 +166,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF2ni8Rum7u8C_GM-3-_nWdfXyWgwNVFkBpD_6T9ylE5i1kRVeRXse4BcSKsTV0z_e/exec";
-const ANTHROPIC_KEY = "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";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGXtHo6hvrZbHtK_zgPIUQkv_vLDgbnHO1vg3UGll7nhW2Go8cEl43FBSkN2Wxfjjx/exec";
 const STAGES = ["Searching","LOI","Due Diligence","Financing","Closing","Closed"];
 
 let clients = [];
@@ -216,26 +217,27 @@ function renderStats() {
 function renderPipeline() {
   document.getElementById("pipeline").innerHTML = STAGES.map(stage => {
     const stageClients = clients.filter(c => c.stage === stage);
-    return `<div>
+    const cards = stageClients.map(c => {
+      const tasks = (c.tasks || []).slice(0,3);
+      const over = overdueCount(c);
+      let badge = "";
+      if (c.stage === "Closed") badge = `<span class="badge badge-green">Closed</span>`;
+      else if (over > 0) badge = `<span class="badge badge-red">${over} overdue</span>`;
+      else if (parseInt(c.daysInStage) > 14) badge = `<span class="badge badge-amber">${c.daysInStage}d in stage</span>`;
+      else badge = `<span class="badge badge-green">${c.daysInStage || 0}d in stage</span>`;
+      return `<div class="client-card${selectedId == c.id ? " selected" : ""}" onclick="selectClient('${c.id}')" style="width:200px; margin-bottom:0;">
+        <div class="client-name">${c.name}</div>
+        <div class="client-biz">${c.businessTarget || ""}</div>
+        ${tasks.map(t => `<div class="task-row">
+          <div class="dot ${t.done ? "dot-green" : t.overdue ? "dot-red" : "dot-amber"}"></div>
+          <div class="task-label">${t.task}</div>
+        </div>`).join("")}
+        ${badge}
+      </div>`;
+    }).join("") || `<span style="font-size:12px; color:#9e9e99;">No clients in this stage</span>`;
+    return `<div class="stage-row">
       <div class="stage-header">${stage}<span class="stage-count">${stageClients.length}</span></div>
-      ${stageClients.map(c => {
-        const tasks = (c.tasks || []).slice(0,3);
-        const over = overdueCount(c);
-        let badge = "";
-        if (c.stage === "Closed") badge = `<span class="badge badge-green">Closed</span>`;
-        else if (over > 0) badge = `<span class="badge badge-red">${over} overdue</span>`;
-        else if (parseInt(c.daysInStage) > 14) badge = `<span class="badge badge-amber">${c.daysInStage}d in stage</span>`;
-        else badge = `<span class="badge badge-green">${c.daysInStage || 0}d in stage</span>`;
-        return `<div class="client-card${selectedId == c.id ? " selected" : ""}" onclick="selectClient('${c.id}')">
-          <div class="client-name">${c.name}</div>
-          <div class="client-biz">${c.businessTarget || ""}</div>
-          ${tasks.map(t => `<div class="task-row">
-            <div class="dot ${t.done ? "dot-green" : t.overdue ? "dot-red" : "dot-amber"}"></div>
-            <div class="task-label">${t.task}</div>
-          </div>`).join("")}
-          ${badge}
-        </div>`;
-      }).join("") || `<div style="font-size:12px; color:#9e9e99; padding:4px;">—</div>`}
+      <div class="stage-cards">${cards}</div>
     </div>`;
   }).join("");
 }
@@ -300,13 +302,10 @@ async function draftMessage(targetIdx) {
   const prompt = `You are an assistant helping a business acquisition advisor named Evan DiLeonardi. One of his clients is ${c.name}, who is trying to buy: ${c.businessTarget || "a business"} ${c.askingPrice ? "asking " + c.askingPrice : ""}. They are currently in the "${c.stage}" stage. The item needing a follow-up is: ${target.ctx}. Write a short, professional email body (2-4 sentences) that Evan or his assistant could send to move this item forward. Be specific and direct. No subject line. Just the body.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] })
-    });
+    const url = SCRIPT_URL + "?action=draft&prompt=" + encodeURIComponent(prompt);
+    const res = await fetch(url);
     const data = await res.json();
-    out.textContent = data.content?.find(b => b.type === "text")?.text || "Could not generate draft.";
+    out.textContent = data.draft || "Could not generate draft.";
   } catch(e) {
     out.textContent = "Error generating draft.";
   }
