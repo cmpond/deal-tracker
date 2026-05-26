@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --surface2: #f4f3f0;
+    --border: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9e9e99;
+    --blue-bg: #e6f1fb;
+    --blue-text: #185fa5;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+    --amber-bg: #faeeda;
+    --amber-text: #854f0b;
+    --red-bg: #fcebeb;
+    --red-text: #a32d2d;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .app { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; }
+  .header-left h1 { font-size: 20px; font-weight: 500; }
+  .header-left p { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .btn { font-size: 13px; padding: 7px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: var(--surface); color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.85; background: var(--text); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .stat { background: var(--surface2); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
+  .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 500; }
+
+  .main { display: grid; grid-template-columns: 1fr 340px; gap: 1rem; }
+
+  .pipeline { overflow-x: auto; }
+  .pipeline-inner { display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); gap: 8px; min-width: 900px; }
+
+  .stage-header { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 4px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .stage-count { background: var(--surface2); border-radius: 10px; padding: 1px 7px; font-size: 11px; }
+
+  .client-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .client-card:hover { border-color: var(--border-mid); }
+  .client-card.selected { border: 1.5px solid var(--blue-text); }
+  .client-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .client-biz { font-size: 11px; color: var(--text2); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-row { display: flex; align-items: center; gap: 5px; font-size: 11px; margin-bottom: 3px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-red { background: #e24b4a; }
+  .dot-amber { background: #ef9f27; }
+  .dot-green { background: #639922; }
+  .task-label { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-top: 6px; }
+  .badge-red { background: var(--red-bg); color: var(--red-text); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+
+  .detail { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem); overflow-y: auto; }
+  .detail-header { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 0.5px solid var(--border); }
+  .detail-name { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+  .detail-meta { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .stage-pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--blue-bg); color: var(--blue-text); font-weight: 500; display: inline-block; }
+
+  .section-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .checklist { margin-bottom: 1.25rem; }
+  .check-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .check-item:last-child { border-bottom: none; }
+  .check-icon { font-size: 15px; flex-shrink: 0; }
+  .check-label { flex: 1; }
+  .check-label.done { color: var(--text2); text-decoration: line-through; }
+  .check-who { font-size: 11px; color: var(--text3); }
+
+  .ai-section { border-top: 0.5px solid var(--border); padding-top: 1rem; }
+  .draft-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .draft-btn { font-size: 12px; padding: 5px 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: transparent; color: var(--text); cursor: pointer; }
+  .draft-btn:hover { background: var(--surface2); }
+  .ai-output { background: var(--surface2); border-radius: var(--radius-md); padding: 12px; font-size: 13px; line-height: 1.6; min-height: 60px; white-space: pre-wrap; color: var(--text); }
+  .ai-muted { color: var(--text2); font-style: italic; }
+
+  .empty { color: var(--text2); font-size: 14px; text-align: center; padding: 2rem; }
+
+  .loading-overlay { position: fixed; inset: 0; background: rgba(249,249,248,0.8); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text2); z-index: 100; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem; width: 400px; max-width: 90vw; border: 0.5px solid var(--border); }
+  .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); font-size: 13px; background: var(--surface); color: var(--text); }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <span><i class="ti ti-refresh" style="animation: spin 1s linear infinite; display:inline-block; margin-right:6px;"></i>Loading deals…</span>
+</div>
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <h1>Deal tracker</h1>
+      <p id="last-updated">Loading…</p>
+    </div>
+    <div class="header-right">
+      <button class="btn" onclick="loadData()"><i class="ti ti-refresh" aria-hidden="true"></i> Refresh</button>
+      <button class="btn btn-primary" onclick="openAddModal()"><i class="ti ti-plus" aria-hidden="true"></i> Add client</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <div class="pipeline">
+      <div class="pipeline-inner" id="pipeline"></div>
+    </div>
+    <div class="detail" id="detail">
+      <div class="empty"><i class="ti ti-hand-click" style="font-size:28px; display:block; margin-bottom:8px;" aria-hidden="true"></i>Select a client to view details</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="add-modal" style="display:none;">
+  <div class="modal">
+    <h2>Add new client</h2>
+    <div class="form-group"><label>Client name</label><input id="f-name" placeholder="e.g. John Smith"></div>
+    <div class="form-group"><label>Business target</label><input id="f-biz" placeholder="e.g. Plumbing co. — $1.2M asking"></div>
+    <div class="form-group"><label>Stage</label>
+      <select id="f-stage">
+        <option>Searching</option><option>LOI</option><option>Due Diligence</option>
+        <option>Financing</option><option>Closing</option><option>Closed</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Days in current stage</label><input id="f-days" type="number" value="1" min="0"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddClient()">Add client</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxF2ni8Rum7u8C_GM-3-_nWdfXyWgwNVFkBpD_6T9ylE5i1kRVeRXse4BcSKsTV0z_e/exec";
+const ANTHROPIC_KEY = "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";
+const STAGES = ["Searching","LOI","Due Diligence","Financing","Closing","Closed"];
+
+let clients = [];
+let selectedId = null;
+
+async function loadData() {
+  try {
+    const res = await fetch(SCRIPT_URL + "?action=getAll");
+    const data = await res.json();
+    clients = data.clients || [];
+    document.getElementById("last-updated").textContent = "Last refreshed: " + new Date().toLocaleTimeString();
+    render();
+  } catch(e) {
+    document.getElementById("last-updated").textContent = "Error loading data — check console";
+    console.error(e);
+  } finally {
+    document.getElementById("loading").style.display = "none";
+  }
+}
+
+function overdueCount(c) {
+  return (c.tasks || []).filter(t => !t.done && t.overdue).length;
+}
+
+function render() {
+  renderStats();
+  renderPipeline();
+  renderDetail();
+}
+
+function renderStats() {
+  const active = clients.filter(c => c.stage !== "Closed").length;
+  const closed = clients.filter(c => c.stage === "Closed").length;
+  const overdue = clients.reduce((a, c) => a + overdueCount(c), 0);
+  const totalVal = clients.filter(c => c.stage !== "Closed").reduce((a, c) => {
+    const m = String(c.askingPrice || "").replace(/,/g,"").match(/([\d.]+)/);
+    return a + (m ? parseFloat(m[1]) : 0);
+  }, 0);
+
+  document.getElementById("stats").innerHTML = [
+    { label: "Active deals", val: active },
+    { label: "Closed deals", val: closed },
+    { label: "Overdue items", val: overdue },
+    { label: "Pipeline value", val: "$" + (totalVal/1000000).toFixed(1) + "M" },
+  ].map(s => `<div class="stat"><div class="stat-label">${s.label}</div><div class="stat-val">${s.val}</div></div>`).join("");
+}
+
+function renderPipeline() {
+  document.getElementById("pipeline").innerHTML = STAGES.map(stage => {
+    const stageClients = clients.filter(c => c.stage === stage);
+    return `<div>
+      <div class="stage-header">${stage}<span class="stage-count">${stageClients.length}</span></div>
+      ${stageClients.map(c => {
+        const tasks = (c.tasks || []).slice(0,3);
+        const over = overdueCount(c);
+        let badge = "";
+        if (c.stage === "Closed") badge = `<span class="badge badge-green">Closed</span>`;
+        else if (over > 0) badge = `<span class="badge badge-red">${over} overdue</span>`;
+        else if (parseInt(c.daysInStage) > 14) badge = `<span class="badge badge-amber">${c.daysInStage}d in stage</span>`;
+        else badge = `<span class="badge badge-green">${c.daysInStage || 0}d in stage</span>`;
+        return `<div class="client-card${selectedId == c.id ? " selected" : ""}" onclick="selectClient('${c.id}')">
+          <div class="client-name">${c.name}</div>
+          <div class="client-biz">${c.businessTarget || ""}</div>
+          ${tasks.map(t => `<div class="task-row">
+            <div class="dot ${t.done ? "dot-green" : t.overdue ? "dot-red" : "dot-amber"}"></div>
+            <div class="task-label">${t.task}</div>
+          </div>`).join("")}
+          ${badge}
+        </div>`;
+      }).join("") || `<div style="font-size:12px; color:#9e9e99; padding:4px;">—</div>`}
+    </div>`;
+  }).join("");
+}
+
+function selectClient(id) {
+  selectedId = id;
+  renderPipeline();
+  renderDetail();
+}
+
+function renderDetail() {
+  const panel = document.getElementById("detail");
+  if (!selectedId) {
+    panel.innerHTML = `<div class="empty"><i class="ti ti-hand-click" style="font-size:28px; display:block; margin-bottom:8px;"></i>Select a client to view details</div>`;
+    return;
+  }
+  const c = clients.find(x => String(x.id) === String(selectedId));
+  if (!c) return;
+
+  const tasks = c.tasks || [];
+  const blocked = tasks.filter(t => !t.done && t.overdue);
+  const pending = tasks.filter(t => !t.done && !t.overdue);
+  const draftTargets = [
+    ...blocked.map(t => ({ label: `Nudge ${t.assignedTo} re: ${t.task}`, ctx: `blocked: ${t.task} (assigned to: ${t.assignedTo})` })),
+    ...pending.slice(0,2).map(t => ({ label: `Follow up on ${t.task}`, ctx: `pending: ${t.task} (assigned to: ${t.assignedTo})` }))
+  ];
+  window._draftTargets = draftTargets;
+  window._selectedClient = c;
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-name">${c.name}</div>
+      <div class="detail-meta">${c.businessTarget || ""} ${c.askingPrice ? "— " + c.askingPrice : ""}</div>
+      <span class="stage-pill">${c.stage}</span>
+    </div>
+    <div class="checklist">
+      <div class="section-title">Checklist</div>
+      ${tasks.map((t, i) => `
+        <div class="check-item">
+          <i class="ti ${t.done ? "ti-circle-check" : t.overdue ? "ti-alert-circle" : "ti-circle"} check-icon"
+             style="color:${t.done ? "#639922" : t.overdue ? "#e24b4a" : "#9e9e99"}" aria-hidden="true"></i>
+          <span class="check-label${t.done ? " done" : ""}">${t.task}</span>
+          <span class="check-who">${t.assignedTo || ""}</span>
+        </div>`).join("")}
+    </div>
+    <div class="ai-section">
+      <div class="section-title">Draft a follow-up</div>
+      <div class="draft-btns">
+        ${draftTargets.map((d,i) => `<button class="draft-btn" onclick="draftMessage(${i})">${d.label}</button>`).join("")}
+        ${draftTargets.length === 0 ? `<span style="font-size:12px; color:#9e9e99;">No blocked or pending items</span>` : ""}
+      </div>
+      <div class="ai-output" id="ai-out"><span class="ai-muted">Choose a follow-up above to draft a message…</span></div>
+    </div>`;
+}
+
+async function draftMessage(targetIdx) {
+  const c = window._selectedClient;
+  const target = window._draftTargets[targetIdx];
+  const out = document.getElementById("ai-out");
+  out.innerHTML = `<span class="ai-muted">Drafting…</span>`;
+
+  const prompt = `You are an assistant helping a business acquisition advisor named Evan DiLeonardi. One of his clients is ${c.name}, who is trying to buy: ${c.businessTarget || "a business"} ${c.askingPrice ? "asking " + c.askingPrice : ""}. They are currently in the "${c.stage}" stage. The item needing a follow-up is: ${target.ctx}. Write a short, professional email body (2-4 sentences) that Evan or his assistant could send to move this item forward. Be specific and direct. No subject line. Just the body.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] })
+    });
+    const data = await res.json();
+    out.textContent = data.content?.find(b => b.type === "text")?.text || "Could not generate draft.";
+  } catch(e) {
+    out.textContent = "Error generating draft.";
+  }
+}
+
+function openAddModal() { document.getElementById("add-modal").style.display = "flex"; }
+function closeAddModal() { document.getElementById("add-modal").style.display = "none"; }
+
+function submitAddClient() {
+  alert("To add a client, just add a new row in the Google Sheet and hit Refresh. This button can be wired up later!");
+  closeAddModal();
+}
+
+loadData();
+</script>
+</body>
+</html>
